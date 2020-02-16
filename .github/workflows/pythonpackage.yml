@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import matplotlib
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+X=pd.read_csv("train-data.csv")
+Y=pd.read_csv("test-data.csv")
+X.isnull().sum() 
+X=X.drop(columns=['New_Price', 'Unnamed: 0'], axis=1).dropna(axis=0)
+Y=Y.drop(columns=['New_Price'], axis=1).dropna(axis=0)
+
+X=X.drop(columns=['Location'],axis=1)
+Y=Y.drop(columns=['Location'], axis=1)
+
+X['Name'].unique().sum()
+X['Mileage'] = X['Mileage'].apply(lambda x: float(str(x).split(" ")[0]))
+Y['Mileage'] = Y['Mileage'].apply(lambda x: float(str(x).split(" ")[0]))
+X['Engine'] = X['Engine'].apply(lambda x: float(str(x).split(" ")[0]))
+Y['Engine'] = Y['Engine'].apply(lambda x: float(str(x).split(" ")[0]))
+
+indexNames1 = Y[Y.Power.str.contains("null") ].index
+indexNames = X[X.Power.str.contains("null") ].index
+print(indexNames)
+X=X.drop(indexNames)
+Y=Y.drop(indexNames1)
+Y=Y.drop(1048)
+
+X['Power'] = X['Power'].apply(lambda x: float(str(x).split(" ")[0]))
+Y['Power'] = Y['Power'].apply(lambda x: float(str(x).split(" ")[0]))
+
+Label=LabelEncoder()
+X['Owner_Type']=Label.fit_transform(X['Owner_Type'])
+Y['Owner_Type']=Label.fit_transform(Y['Owner_Type'])
+X['Name'] = X['Name'].apply(lambda x: str(x).split(" ")[0])
+Y['Name'] = Y['Name'].apply(lambda x: str(x).split(" ")[0])
+
+
+
+dict_encode_car_name = {car: i for i, car in enumerate(X['Name'].unique())}
+X['Name'] = X['Name'].replace(dict_encode_car_name)
+Y['Name'] = Y['Name'].replace(dict_encode_car_name)
+
+fuel_type_train = pd.get_dummies(X['Fuel_Type'])
+X = X.drop('Fuel_Type', axis=1).join(fuel_type_train)
+Y = Y.drop('Fuel_Type', axis=1).join(fuel_type_train)
+fuel_type_train1 = pd.get_dummies(X['Transmission'])
+X = X.drop('Transmission', axis=1).join(fuel_type_train1)
+Y = Y.drop('Transmission', axis=1).join(fuel_type_train1)
+
+
+X=X.drop('Price',axis=1)
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+
+lm = RandomForestRegressor(n_estimators=10,random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.22, random_state=1)
+reg = lm.fit(X_train, y_train)
+
+
+y_predict = reg.predict(X_test)
+y_predict
+
+from sklearn.metrics import r2_score
+
+r2_score(y_predict, y_test)
+
